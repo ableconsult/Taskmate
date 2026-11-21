@@ -99,6 +99,14 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
 .gbanner{width:100%;margin:14px 0 0;background:var(--pe-bg);color:var(--ink);border-radius:16px;padding:12px 14px;text-align:left}
 .gbanner[hidden]{display:none}
 .gbox{margin-top:22px;width:100%}.gbox b{font-weight:500}.gbox input{width:100%}.gbox .note{margin:4px 0 0}
+.score{background:var(--dark);color:#fff;border-radius:24px;padding:16px;margin-top:16px}
+.sc1{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.sc1 small{display:block;opacity:.7;font-size:13px}.sc1 b{font-size:30px;font-weight:500;letter-spacing:-.02em;line-height:1.1}
+.sc2{text-align:right}.sc2 span{font-size:22px}
+.sbar{height:6px;border-radius:6px;background:rgba(255,255,255,.18);margin:12px 0 6px;overflow:hidden}
+.sbar i{display:block;height:100%;background:var(--pe);border-radius:6px}
+.sfoot{opacity:.7;font-size:12px}
+.cf{font-size:13px;color:var(--mut);margin:14px 0 2px;display:flex;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -114,6 +122,7 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
       <button id="addBtn" aria-label="Add task"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div>
     <p class="hint" id="hint">Try: “call the dentist tomorrow at 10am, urgent”.</p>
     <button class="gbanner" id="gbanner" hidden>Tap here to sync your reminders to Google Calendar</button>
+    <div class="score" id="score"></div>
     <div class="tiles" id="tiles"></div>
     <div class="sec"><b>Recent Task</b><button class="lnk" data-v="tasks">See All</button></div>
     <ul id="recent"></ul>
@@ -266,6 +275,34 @@ function sorted(v){
   return v.sort((a,b) => score(b)-score(a) || due(a)-due(b));
 }
 
+/* ---------- Points, levels and streaks ---------- */
+let game = {pts: 0, days: {}};
+try { Object.assign(game, JSON.parse(localStorage.getItem("taskmate-game") || "{}")); } catch(e){}
+const gsave = () => { try { localStorage.setItem("taskmate-game", JSON.stringify(game)); } catch(e){} };
+const dayKey = ts => toLocal(ts).slice(0,10);
+const LEVELS = ["Rookie","Planner","Doer","Finisher","Pro","Master","Legend"];
+const level = () => Math.floor(game.pts / 100) + 1;
+const potential = t => ({1:10, 2:15, 3:25})[t.pr] + ((!t.due || Date.now() <= t.due) ? 5 : 0);
+function streak(){
+  let n = 0; const d = new Date(); d.setHours(0,0,0,0);
+  if (!game.days[dayKey(d)]) d.setDate(d.getDate() - 1);
+  while (game.days[dayKey(d)] > 0) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function toggleDone(t){
+  if (!t.done) {
+    const before = level(), p = potential(t) + Math.min(10, streak() * 2);
+    t.done = true; t.doneAt = Date.now(); t.pts = p; game.pts += p;
+    const k = dayKey(t.doneAt); game.days[k] = (game.days[k] || 0) + 1;
+    toast("🎉 +" + p + " points" + (level() > before ? " · Level " + level() + "!" : "") + " · " + streak() + "-day streak", 4000);
+  } else {
+    t.done = false; game.pts = Math.max(0, game.pts - (t.pts || 0));
+    if (t.doneAt) { const k = dayKey(t.doneAt); if (game.days[k]) game.days[k]--; }
+    t.pts = 0; t.doneAt = null;
+  }
+  gsave(); save(); render();
+}
+
 /* ---------- Views ---------- */
 const ARROW = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const startOfDay = ts => { const d = new Date(ts); d.setHours(0,0,0,0); return d.getTime(); };
@@ -288,14 +325,17 @@ function card(t){
   return `<li class="t ${t.done?"done":""}" data-id="${t.id}" style="--ac:var(${c.v})">
     <div class="top"><span class="cat"><i></i>${c.n}</span><button class="ck" data-a="done" aria-label="${t.done?"Mark not done":"Mark done"}">${t.done?"✓":""}</button></div>
     <div class="ttl">${esc(t.title)}</div>
-    <div class="bot"><div class="sub"><span class="${over?"over":""}">${over?"Overdue · ":""}${dueLabel(t)}</span><br>${PRI[t.pr]} priority${t.remindAt&&!t.reminded?" · 🔔 "+timeOnly(t.remindAt):""}${t.plan&&t.plan.length?" · Plan "+t.plan.filter(x=>x.done).length+"/"+t.plan.length:""}</div>
+    <div class="bot"><div class="sub"><span class="${over?"over":""}">${over?"Overdue · ":""}${dueLabel(t)}</span><br>${PRI[t.pr]} priority${t.done?(t.pts?" · +"+t.pts+" pts":""):" · +"+potential(t)+" pts"}${t.remindAt&&!t.reminded&&!t.done?" · 🔔 "+timeOnly(t.remindAt):""}${t.plan&&t.plan.length?" · Plan "+t.plan.filter(x=>x.done).length+"/"+t.plan.length:""}</div>
     <button class="go" data-a="open" aria-label="Open task">${ARROW}</button></div></li>`;
 }
 function renderHome(){
   const open = tasks.filter(t => !t.done), h = new Date().getHours();
   $("#greet").textContent = h<12 ? "Good morning" : h<17 ? "Good afternoon" : "Good evening";
   $("#dt").textContent = new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});
-  $("#hl").innerHTML = open.length ? `Let’s clear the list<br><span>${open.length} still open.</span>` : `All clear<br><span>Nice work today.</span>`;
+  const carried = open.filter(t => t.due && startOfDay(t.due) < startOfDay(Date.now())).length;
+  $("#hl").innerHTML = open.length ? `Let’s clear the list<br><span>${open.length} still open${carried ? " · " + carried + " carried forward" : ""}.</span>` : `All clear<br><span>Nice work today.</span>`;
+  const lv = level(), into = game.pts % 100, st = streak(), todayN = game.days[dayKey(Date.now())] || 0;
+  $("#score").innerHTML = `<div class="sc1"><div><small>Level ${lv} · ${LEVELS[Math.min(lv-1, LEVELS.length-1)]}</small><b>${game.pts} pts</b></div><div class="sc2"><span>🔥 ${st}</span><small>day streak</small></div></div><div class="sbar"><i style="width:${into}%"></i></div><small class="sfoot">${100-into} pts to level ${lv+1} · ${todayN} done today</small>`;
   $("#tiles").innerHTML = Object.keys(CATS).map(k => {
     const all = tasks.filter(t => t.cat === k), dn = all.filter(t => t.done).length, nxt = sorted(all.filter(t => !t.done))[0];
     return `<button class="tile" data-k="${k}" style="background:var(${CATS[k].v}-bg)"><b>${CATS[k].n}</b>
@@ -307,14 +347,19 @@ function renderHome(){
 }
 function renderSchedule(){
   let h = "";
-  for (let i = 0; i < 14; i++) {
+  for (let i = -7; i < 14; i++) {
     const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() + i); const ts = d.getTime();
-    const has = tasks.some(t => !t.done && t.due && startOfDay(t.due) === ts);
+    const has = tasks.some(t => t.due && startOfDay(t.due) === ts && (!t.done || ts < startOfDay(Date.now())));
     h += `<button class="day ${ts===selDay?"on":""} ${has?"has":""}" data-d="${ts}"><small>${d.toLocaleDateString([], {weekday:"short"})}</small><b>${d.getDate()}</b></button>`;
   }
   $("#days").innerHTML = h;
+  const on = $("#days .on"); if (on && view === "schedule") $("#days").scrollLeft = on.offsetLeft - ($("#days").clientWidth - on.clientWidth) / 2;
   const items = tasks.filter(t => t.due && startOfDay(t.due) === selDay).sort((a,b) => a.due - b.due);
-  $("#tl").innerHTML = (items.length ? items.map(t => `<div class="slot" data-id="${t.id}"><span class="tm">${t.timed?timeOnly(t.due):"All day"}</span>
+  const carried = selDay === startOfDay(Date.now()) ? tasks.filter(t => !t.done && t.due && startOfDay(t.due) < selDay).sort((a,b) => a.due - b.due) : [];
+  const blk = (t, lbl) => `<div class="slot" data-id="${t.id}"><span class="tm">${lbl}</span>
+    <div class="blk ${t.done?"done":""}" style="--ac:var(${CATS[t.cat].v})" data-a="open"><small>${t.remindAt&&!t.reminded?"🔔 "+timeOnly(t.remindAt):"No reminder"}</small><b>${esc(t.title)}</b><small>${CATS[t.cat].n} | ${PRI[t.pr]} priority</small></div></div>`;
+  const cfHtml = carried.length ? `<div class="cf"><span>Carried forward</span><span>${carried.length} not done yet</span></div>` + carried.map(t => blk(t, new Date(t.due).toLocaleDateString([], {month:"short",day:"numeric"}))).join("") : "";
+  $("#tl").innerHTML = cfHtml + (items.length ? items.map(t => `<div class="slot" data-id="${t.id}"><span class="tm">${t.timed?timeOnly(t.due):"All day"}</span>
     <div class="blk ${t.done?"done":""}" style="--ac:var(${CATS[t.cat].v})" data-a="open"><small>${t.remindAt&&!t.reminded?"🔔 "+timeOnly(t.remindAt):"No reminder"}</small><b>${esc(t.title)}</b><small>${CATS[t.cat].n} | ${PRI[t.pr]} priority</small></div></div>`).join("")
     : `<div class="empty">Nothing scheduled for this day.</div>`) +
     `<div class="slot"><span class="tm"></span><button class="mk" id="mkT">Create New Task <span>+</span></button></div>`;
@@ -361,7 +406,7 @@ function openSheet(id){
     <div class="rtxt" id="rtxt">${remindText(t)}</div>
     <label>Plan</label><div id="steps">${stepsHtml(t)}</div>
     <div class="acts"><button data-x="auto">${(t.plan&&t.plan.length)?"Regenerate plan":"Generate a plan"}</button><button class="ghost" data-x="addstep">Add step</button></div>
-    <div class="acts"><button class="ghost" data-x="ics">Add to phone calendar</button><button class="ghost" data-x="done">${t.done?"Mark not done":"Mark done"}</button><button class="danger" data-x="del">Delete task</button></div>`;
+    <div class="acts">${t.done ? "" : `<button class="ghost" data-x="today">Move to today</button>`}<button class="ghost" data-x="ics">Add to phone calendar</button><button class="ghost" data-x="done">${t.done?"Mark not done":"Mark done"}</button><button class="danger" data-x="del">Delete task</button></div>`;
   $("#sheet").hidden = false;
 }
 function closeSheet(){ $("#sheet").hidden = true; editId = null; save(); render(); }
@@ -401,7 +446,13 @@ $("#sh").addEventListener("click", e => {
   else if (x === "nodue") { t.due = null; if (t.rmode !== "custom") t.rmode = "none"; setRemind(t); $("#f-due").value = ""; refreshRemind(t); save(); }
   else if (x === "auto") { t.plan = Engine.plan(t); $("#steps").innerHTML = stepsHtml(t); e.target.textContent = "Regenerate plan"; save(); }
   else if (x === "addstep") { t.plan = t.plan || []; t.plan.push({s:"", at: t.due || Date.now(), done:false}); $("#steps").innerHTML = stepsHtml(t); save(); $("#steps").lastElementChild.querySelector("[data-s=text]").focus(); }
-  else if (x === "done") { t.done = !t.done; closeSheet(); }
+  else if (x === "done") { toggleDone(t); closeSheet(); }
+  else if (x === "today") {
+    const n = new Date(), b = t.due ? new Date(t.due) : n; let d = new Date(n);
+    d.setHours(t.timed ? b.getHours() : 17, t.timed ? b.getMinutes() : 0, 0, 0);
+    if (d <= n) { d = new Date(n.getTime() + 36e5); t.timed = true; }
+    t.due = d.getTime(); autoRemind(t); save(); openSheet(t.id); toast("Moved to today, " + timeOnly(t.due) + ".", 3000);
+  }
   else if (x === "ics") downloadIcs([t]);
   else if (x === "del") { if (confirm("Delete this task?")) { if (t.gid) gQueueDel(t.gid); tasks = tasks.filter(k => k !== t); closeSheet(); } }
 });
@@ -432,7 +483,7 @@ document.addEventListener("click", e => {
   }
   const el = e.target.closest("[data-id]"); if (!el || !el.closest("main")) return;
   const t = byId(el.dataset.id); if (!t) return;
-  if (e.target.closest("[data-a=done]")) { t.done = !t.done; save(); render(); } else openSheet(t.id);
+  if (e.target.closest("[data-a=done]")) toggleDone(t); else openSheet(t.id);
 });
 
 /* ---------- Voice ---------- */
@@ -449,11 +500,12 @@ else {
 }
 
 /* ---------- Reminders ---------- */
-function toast(msg){
+function toast(msg, ms){
   const d = document.createElement("div"); d.className = "toast";
   d.innerHTML = `<span>${esc(msg)}</span><button>Dismiss</button>`;
   d.querySelector("button").onclick = () => d.remove();
   $("#toasts").appendChild(d);
+  if (ms) setTimeout(() => d.remove(), ms);
 }
 function fire(msg){
   toast("🔔 " + msg);
@@ -603,12 +655,12 @@ loadGIS().catch(() => {});
 /* ---------- Backup ---------- */
 $("#exp").onclick = () => {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(tasks)], {type:"application/json"}));
+  a.href = URL.createObjectURL(new Blob([JSON.stringify({tasks, game})], {type:"application/json"}));
   a.download = "taskmate-backup.json"; a.click();
 };
 $("#imp").onclick = () => $("#file").click();
 $("#file").onchange = async e => {
-  try { const d = JSON.parse(await e.target.files[0].text()); if (Array.isArray(d)) { tasks = d; save(); render(); toast("Backup imported."); } }
+  try { const d = JSON.parse(await e.target.files[0].text()), arr = Array.isArray(d) ? d : d.tasks; if (Array.isArray(arr)) { tasks = arr; if (!Array.isArray(d) && d.game) { game = d.game; gsave(); } save(); render(); toast("Backup imported."); } }
   catch(err){ toast("That file is not a valid backup."); }
 };
 
