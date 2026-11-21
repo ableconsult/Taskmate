@@ -34,8 +34,8 @@ h1 span{color:var(--mut)}
 .cap button{width:44px;height:44px;padding:0;display:grid;place-items:center;flex:none}
 .cap .mic{background:var(--bg);color:var(--ink)}.cap .mic.on{background:var(--hi);color:#fff}
 .hint{color:var(--mut);font-size:13px;margin:8px 6px 0}
-.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0 24px}
-.tile{min-height:134px;border-radius:24px;padding:16px;text-align:left;color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;gap:10px}
+.tiles{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;margin:20px 0 24px}
+.tile{min-width:0;min-height:134px;border-radius:24px;padding:16px;text-align:left;color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;gap:10px}
 .tile b{font-size:18px;font-weight:500;letter-spacing:-.02em}
 .nx{font-size:13px;display:flex;justify-content:space-between;gap:8px}
 .nx span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -149,6 +149,12 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
 
 <script>
 "use strict";
+/* Fit to phone screens even when the browser is stuck in "Desktop site" mode */
+function fit(){ try {
+  const small = Math.min(screen.width, screen.height) < 700;
+  document.documentElement.style.zoom = (small && window.innerWidth > 700) ? (window.innerWidth / 480).toFixed(3) : "";
+} catch(e){} }
+fit(); window.addEventListener("resize", fit);
 const $ = s => document.querySelector(s);
 const CATS = {
   coursework:{n:"Coursework",v:"--cw",kw:/\b(assignment|homework|exam|quiz|lecture|class|course|professor|prof|thesis|essay|lab|study|midterm|final|syllabus|semester|tutorial|reading|paper|submit|ml|dsa)\b/gi},
@@ -198,6 +204,7 @@ function autoRemind(t){           // pick the first sensible reminder that is st
 /* ---------- Engine: swap analyze() later for a free AI model ---------- */
 const Engine = {
   analyze(text){
+    text = text.replace(/\b([ap])\.\s?m\.?/gi, "$1m");
     let t = text.trim(), now = new Date(), due = null, timed = false, m;
     const take = re => { const r = t.match(re); if (r) t = t.replace(re," "); return r; };
     if (m = take(/\bin (\d+) (min|minute|hour|hr|day|week)s?\b/i)) {
@@ -227,7 +234,7 @@ const Engine = {
     if (/\b(urgent|asap|important|critical|high priority)\b|!!/i.test(text)) pr = 3;
     else if (/\b(low priority|whenever|someday|no rush|eventually)\b/i.test(text)) pr = 1;
     t = t.replace(/\b(urgent|asap|important|critical|high priority|low priority|whenever|someday|no rush|eventually)\b|!!/gi," ")
-         .replace(/^\s*(remind me to|remind me|please|to)\s+/i,"")
+         .replace(/^\s*(set (?:a |an )?(?:reminder|alarm)(?: for| to)?|remind me(?: to)?|please|to)\s+/i,"")
          .replace(/\s+(by|on|at|due|before|for)\s*$/i,"")
          .replace(/\s*[,;]\s*$/,"").replace(/\s+/g," ").trim();
     t = (t || text.trim()); t = t[0].toUpperCase() + t.slice(1);
