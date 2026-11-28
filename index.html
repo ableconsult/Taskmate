@@ -9,11 +9,14 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Taskmate">
+<script>try{var t=localStorage.getItem("taskmate-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
 :root{--page:#E4EBE5;--bg:#F6F6F4;--sur:#fff;--ink:#1A1A1A;--mut:#7A7D80;--line:#E4E4E0;--acc:#2A2A2A;--on-acc:#fff;--go-bg:#2A2A2A;--go-fg:#fff;--dark:#2A2A2A;
 --cw:#4F9A63;--co:#3E8E9E;--pe:#E0A526;--hi:#D6453D;--cw-bg:#DDEBDD;--co-bg:#D9E8EA;--pe-bg:#FBEAB9;color-scheme:light}
-@media(prefers-color-scheme:dark){:root{--page:#0B0C0D;--bg:#131415;--sur:#1D1E20;--ink:#F1F1EE;--mut:#9A9DA1;--line:#2C2D30;--acc:#F1F1EE;--on-acc:#1A1A1A;--go-bg:#F1F1EE;--go-fg:#1A1A1A;--dark:#2B2D31;
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#0B0C0D;--bg:#131415;--sur:#1D1E20;--ink:#F1F1EE;--mut:#9A9DA1;--line:#2C2D30;--acc:#F1F1EE;--on-acc:#1A1A1A;--go-bg:#F1F1EE;--go-fg:#1A1A1A;--dark:#2B2D31;
 --cw:#6FBF84;--co:#5FB4C4;--pe:#F0BE4A;--hi:#FF7A70;--cw-bg:#26382B;--co-bg:#243A40;--pe-bg:#40361C;color-scheme:dark}}
+:root[data-theme="dark"]{--page:#0B0C0D;--bg:#131415;--sur:#1D1E20;--ink:#F1F1EE;--mut:#9A9DA1;--line:#2C2D30;--acc:#F1F1EE;--on-acc:#1A1A1A;--go-bg:#F1F1EE;--go-fg:#1A1A1A;--dark:#2B2D31;
+--cw:#6FBF84;--co:#5FB4C4;--pe:#F0BE4A;--hi:#FF7A70;--cw-bg:#26382B;--co-bg:#243A40;--pe-bg:#40361C;color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0}
 body{background:var(--page);color:var(--ink);font:16px/1.45 "Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -107,6 +110,18 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
 .sbar i{display:block;height:100%;background:var(--pe);border-radius:6px}
 .sfoot{opacity:.7;font-size:12px}
 .cf{font-size:13px;color:var(--mut);margin:14px 0 2px;display:flex;justify-content:space-between}
+.seg{display:flex;background:var(--line);border-radius:99px;padding:4px;gap:4px;width:100%}
+.seg button{flex:1;background:none;color:var(--mut);padding:9px 8px}
+.seg button.on{background:var(--acc);color:var(--on-acc)}
+.apb{font-weight:500;margin-top:4px}
+li.rw{background:var(--sur);border-radius:22px;padding:14px 16px;display:flex;gap:14px;align-items:center}
+.rw .em{width:48px;height:48px;border-radius:16px;background:var(--bg);display:grid;place-items:center;font-size:26px;flex:none}
+.rw .rb2{flex:1;min-width:0}.rw b{font-weight:500;font-size:17px;display:block;overflow-wrap:anywhere}.rw small{color:var(--mut);display:block;font-size:13px}
+.rw .rbar{height:4px;border-radius:4px;background:var(--line);margin-top:8px;overflow:hidden}.rw .rbar i{display:block;height:100%;background:var(--pe)}
+.rw .claim{flex:none;padding:10px 14px}.rw .claim:disabled{background:var(--line);color:var(--mut);cursor:default}
+.rw .x{background:none;color:var(--mut);padding:4px 6px;font-size:14px;flex:none}
+.logrow{font-size:14px;color:var(--mut);padding:10px 2px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.chk{font-size:13px;color:var(--mut);display:flex;gap:8px;align-items:flex-start}.set select{width:100%}
 </style>
 </head>
 <body>
@@ -122,9 +137,9 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
       <button id="addBtn" aria-label="Add task"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div>
     <p class="hint" id="hint">Try: “call the dentist tomorrow at 10am, urgent”.</p>
     <button class="gbanner" id="gbanner" hidden>Tap here to sync your reminders to Google Calendar</button>
-    <div class="score" id="score"></div>
+    <div class="score" id="score" data-v="rewards" role="button" style="cursor:pointer"></div>
     <div class="tiles" id="tiles"></div>
-    <div class="sec"><b>Recent Task</b><button class="lnk" data-v="tasks">See All</button></div>
+    <div class="sec"><b>Pending Tasks</b><span class="lnk" id="pcount"></span></div>
     <ul id="recent"></ul>
   </section>
   <section class="view" id="v-schedule" hidden><header class="hd"><button class="rb" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><b class="pt">Schedule</b><button class="rb bell" aria-label="Next reminder"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></svg></button></header>
@@ -133,8 +148,18 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
     <div class="chips" id="chips"></div>
     <div class="tools"><select id="sort" aria-label="Sort tasks"><option value="smart">Sort: Smart</option><option value="due">Sort: Due date</option><option value="pr">Sort: Priority</option></select></div>
     <ul id="list"></ul></section>
+  <section class="view" id="v-rewards" hidden><header class="hd"><button class="rb" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><b class="pt">Rewards</b><button class="rb bell" aria-label="Next reminder"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></svg></button></header>
+    <div class="score" id="rbal"></div>
+    <div class="sec" style="margin-top:20px"><b>Treats you can earn</b><button class="lnk" id="addR">+ Add your own</button></div>
+    <ul id="rlist"></ul>
+    <div class="sec" style="margin-top:24px"><b>Claimed so far</b></div>
+    <ul id="rlog"></ul></section>
   <section class="view" id="v-settings" hidden><header class="hd"><button class="rb" data-v="home" aria-label="Back"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><b class="pt">Settings</b><button class="rb bell" aria-label="Next reminder"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 0112 0c0 6 2 7 2 7H4s2-1 2-7"/><path d="M10 20a2 2 0 004 0"/></svg></button></header>
-    <div class="set">
+    <div class="set"><span class="apb">Appearance</span>
+      <div class="seg" id="seg" role="group" aria-label="Appearance"><button data-th="auto">Auto</button><button data-th="light">Light</button><button data-th="dark">Dark</button></div>
+      <span class="apb">Voice</span>
+      <select id="vlang" aria-label="Voice language"><option value="en-IN">English (India)</option><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option><option value="hi-IN">Hindi</option></select>
+      <label class="chk"><input type="checkbox" id="vauto"> Add voice tasks straight away (otherwise I show what I heard first)</label>
       <button class="ghost" id="alerts">Turn on device alerts</button>
       <button class="ghost" id="test">Test reminder</button>
       <button class="ghost" id="icsAll">Add all reminders to phone calendar</button>
@@ -153,6 +178,7 @@ nav button.on{background:rgba(255,255,255,.16);opacity:1}nav button.on span{disp
   <button data-v="home" class="on" aria-label="Home"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg><span>Home</span></button>
   <button data-v="schedule" aria-label="Schedule"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span>Schedule</span></button>
   <button data-v="tasks" aria-label="Tasks"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Tasks</span></button>
+<button data-v="rewards" aria-label="Rewards"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-1-4-6-4-5 0M12 8c1-4 6-4 5 0"/></svg><span>Rewards</span></button>
 </nav>
 <div id="sheet" hidden><div class="sh" id="sh" role="dialog" aria-modal="true"></div></div>
 
@@ -214,6 +240,8 @@ function autoRemind(t){           // pick the first sensible reminder that is st
 const Engine = {
   analyze(text){
     text = text.replace(/\b([ap])\.\s?m\.?/gi, "$1m");
+    const NW = {one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12};
+    text = text.replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s*(am|pm)\b/gi, (x, w, ap) => NW[w.toLowerCase()] + " " + ap);
     let t = text.trim(), now = new Date(), due = null, timed = false, m;
     const take = re => { const r = t.match(re); if (r) t = t.replace(re," "); return r; };
     if (m = take(/\bin (\d+) (min|minute|hour|hr|day|week)s?\b/i)) {
@@ -234,21 +262,39 @@ const Engine = {
     let tm = take(/\b(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i), h, min;
     if (tm) { h = +tm[1] % 12 + (tm[3].toLowerCase()==="pm" ? 12 : 0); min = +(tm[2]||0); }
     else if (tm = take(/\bat\s*(\d{1,2}):(\d{2})\b/i)) { h = +tm[1]; min = +tm[2]; }
+    if (!tm && (due || /\b(this|in the)\s+(morning|afternoon|evening)\b/i.test(text)) && (m = take(/\b(?:this\s+|in the\s+)?(morning|afternoon|evening|night)\b/i))) {
+      h = {morning:9, afternoon:15, evening:18, night:21}[m[1].toLowerCase()]; min = 0; tm = m;
+    }
     if (tm) {
       if (!due) { due = new Date(now); due.setHours(h,min,0,0); if (due < now) due.setDate(due.getDate()+1); }
       else due.setHours(h,min,0,0);
       timed = true;
     }
     let pr = 2;
-    if (/\b(urgent|asap|important|critical|high priority)\b|!!/i.test(text)) pr = 3;
-    else if (/\b(low priority|whenever|someday|no rush|eventually)\b/i.test(text)) pr = 1;
-    t = t.replace(/\b(urgent|asap|important|critical|high priority|low priority|whenever|someday|no rush|eventually)\b|!!/gi," ")
-         .replace(/^\s*(set (?:a |an )?(?:reminder|alarm)(?: for| to)?|remind me(?: to)?|please|to)\s+/i,"")
-         .replace(/\s+(by|on|at|due|before|for)\s*$/i,"")
-         .replace(/\s*[,;]\s*$/,"").replace(/\s+/g," ").trim();
+    if (/\b(urgent|asap|important|critical|high priority|priority (?:is )?high)\b|!!/i.test(text)) pr = 3;
+    else if (/\b(low priority|priority (?:is )?low|whenever|someday|no rush|eventually)\b/i.test(text)) pr = 1;
+    // a category the person says out loud decides the category and stays out of the title
+    const catOf = w => /course\s*work|academic|college|school|university/i.test(w) ? "coursework" : /company|work|office|job/i.test(w) ? "company" : "personal";
+    const CW = "(course\\s*work|academics?|college|company|work|office|job|personal(?:\\s+life)?)";
+    const PRE = "(?:(?:in|under|into|to|as|for)\\s+)?(?:the\\s+)?";
+    let forced = null;
+    for (const re of [
+      new RegExp("\\b(?:add|put|file|tag|mark|keep)\\s+(?:it|this)\\s+(?:in|under|to|as)\\s+(?:the\\s+)?" + CW + "\\b", "i"),
+      new RegExp("\\b" + PRE + "(?:category|bucket|tag)\\s*(?:of|is|as|:)?\\s*" + CW + "\\b", "i"),
+      new RegExp("\\b" + PRE + CW + "\\s+(?:category|task|list|bucket|tag)\\b", "i"),
+      new RegExp("^\\s*" + CW + "\\s*[:\\-–]\\s*", "i")]) {
+      const cm = t.match(re); if (cm) { forced = catOf(cm[1]); t = t.replace(re, " "); break; }
+    }
+    const LEAD = /^\s*(?:(?:hey|ok|okay|so|please|and|then|also)\s+)*(?:(?:add|create|make|set|put|new)\s+(?:a\s+|an\s+|the\s+|my\s+)?(?:new\s+)?(?:task|reminder|todo|to-do|alarm)\s*(?:to|for|that|about|called|named|saying|:)?\s*|remind\s+me\s+(?:to\s+|about\s+)?|(?:i\s+(?:need|have|want|must|should|got)\s+to|don'?t\s+forget\s+to|do\s+not\s+forget\s+to|make\s+sure\s+(?:i|to)|let\s+me)\s+|please\s+|to\s+)/i;
+    t = t.replace(/\b(?:mark|set|make)\s+(?:it|this)\s+(?:as\s+)?(?:a\s+)?(?:high|low|medium)\s+priority\b/gi, " ")
+         .replace(/\b(?:high|low|medium)\s+priority\b|\bpriority\s+(?:is\s+)?(?:high|low|medium)\b|\b(?:urgent|asap|important|critical|no rush|someday|eventually|whenever)\b|!!/gi, " ");
+    for (let i = 0; i < 3; i++) t = t.replace(LEAD, "");
+    t = t.replace(/\s+(?:by|on|at|due|before|for|in|this|the|and)\s*$/i, "").replace(/\s+(?:task|reminder)\s*$/i, "")
+         .replace(/\s+/g, " ").replace(/^[\s,;:.\-–]+|[\s,;:.\-–]+$/g, "");
     t = (t || text.trim()); t = t[0].toUpperCase() + t.slice(1);
     let best = "personal", top = 0;
     for (const k in CATS) { const c = (text.match(CATS[k].kw)||[]).length; if (c > top) { top = c; best = k; } }
+    if (forced) best = forced;
     return {title:t, cat:best, pr, due:due?due.getTime():null, timed};
   },
   plan(task){
@@ -276,8 +322,21 @@ function sorted(v){
 }
 
 /* ---------- Points, levels and streaks ---------- */
-let game = {pts: 0, days: {}};
+const DEFAULT_REWARDS = [
+  {id:"r50", emoji:"☕", name:"Chai break + a long chat with Niha", note:"Phones away, full attention", cost:50},
+  {id:"r100", emoji:"🎱", name:"Snooker session", note:"Go for a snooker match", cost:100},
+  {id:"r150", emoji:"🎬", name:"Movie time", note:"Watch a movie, popcorn included", cost:150},
+  {id:"r200", emoji:"🍕", name:"Pizza time", note:"Extra cheese, zero guilt", cost:200},
+  {id:"r300", emoji:"🍨", name:"Dessert run", note:"Ice cream or mithai, your pick", cost:300},
+  {id:"r400", emoji:"🍛", name:"Biryani feast", note:"The full plate, raita and all", cost:400},
+  {id:"r600", emoji:"🎱", name:"Snooker + dinner day out", note:"Match first, then a proper meal. Bring Niha along", cost:600},
+  {id:"r1000", emoji:"🍽️", name:"Food crawl", note:"Try a brand-new restaurant", cost:1000}];
+let game = {pts: 0, days: {}, spent: 0, log: [], rewards: null};
 try { Object.assign(game, JSON.parse(localStorage.getItem("taskmate-game") || "{}")); } catch(e){}
+function ensureGame(){ if (!Array.isArray(game.rewards)) game.rewards = DEFAULT_REWARDS.map(r => ({...r})); game.spent = game.spent || 0; game.log = game.log || []; game.days = game.days || {}; game.pts = game.pts || 0; }
+ensureGame();
+const bal = () => Math.max(0, game.pts - game.spent);
+const nextReward = () => game.rewards.slice().sort((a,b) => a.cost - b.cost).find(r => r.cost > bal());
 const gsave = () => { try { localStorage.setItem("taskmate-game", JSON.stringify(game)); } catch(e){} };
 const dayKey = ts => toLocal(ts).slice(0,10);
 const LEVELS = ["Rookie","Planner","Doer","Finisher","Pro","Master","Legend"];
@@ -291,10 +350,11 @@ function streak(){
 }
 function toggleDone(t){
   if (!t.done) {
-    const before = level(), p = potential(t) + Math.min(10, streak() * 2);
+    const before = level(), balB = bal(), p = potential(t) + Math.min(10, streak() * 2);
     t.done = true; t.doneAt = Date.now(); t.pts = p; game.pts += p;
     const k = dayKey(t.doneAt); game.days[k] = (game.days[k] || 0) + 1;
-    toast("🎉 +" + p + " points" + (level() > before ? " · Level " + level() + "!" : "") + " · " + streak() + "-day streak", 4000);
+    const un = game.rewards.filter(r => r.cost > balB && r.cost <= bal()).sort((a,b) => b.cost - a.cost)[0];
+    toast("🎉 +" + p + " points" + (level() > before ? " · Level " + level() + "!" : "") + " · " + streak() + "-day streak" + (un ? " · You unlocked " + un.emoji + " " + un.name + "!" : ""), un ? 6000 : 4000);
   } else {
     t.done = false; game.pts = Math.max(0, game.pts - (t.pts || 0));
     if (t.doneAt) { const k = dayKey(t.doneAt); if (game.days[k]) game.days[k]--; }
@@ -334,15 +394,17 @@ function renderHome(){
   $("#dt").textContent = new Date().toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"});
   const carried = open.filter(t => t.due && startOfDay(t.due) < startOfDay(Date.now())).length;
   $("#hl").innerHTML = open.length ? `Let’s clear the list<br><span>${open.length} still open${carried ? " · " + carried + " carried forward" : ""}.</span>` : `All clear<br><span>Nice work today.</span>`;
-  const lv = level(), into = game.pts % 100, st = streak(), todayN = game.days[dayKey(Date.now())] || 0;
-  $("#score").innerHTML = `<div class="sc1"><div><small>Level ${lv} · ${LEVELS[Math.min(lv-1, LEVELS.length-1)]}</small><b>${game.pts} pts</b></div><div class="sc2"><span>🔥 ${st}</span><small>day streak</small></div></div><div class="sbar"><i style="width:${into}%"></i></div><small class="sfoot">${100-into} pts to level ${lv+1} · ${todayN} done today</small>`;
+  const b = bal(), nx = nextReward(), lv = level(), st = streak(), todayN = game.days[dayKey(Date.now())] || 0;
+  $("#score").innerHTML = `<div class="sc1"><div><small>Level ${lv} · ${LEVELS[Math.min(lv-1, LEVELS.length-1)]}</small><b>${b} pts</b></div><div class="sc2"><span>🔥 ${st}</span><small>day streak</small></div></div><div class="sbar"><i style="width:${nx ? Math.min(100, b / nx.cost * 100) : 100}%"></i></div><small class="sfoot">${nx ? (nx.cost - b) + " pts to go for " + (nx.emoji || "") + " " + esc(nx.name) : "You can claim any treat! 🎉"} · ${todayN} done today</small>`;
   $("#tiles").innerHTML = Object.keys(CATS).map(k => {
     const all = tasks.filter(t => t.cat === k), dn = all.filter(t => t.done).length, nxt = sorted(all.filter(t => !t.done))[0];
     return `<button class="tile" data-k="${k}" style="background:var(${CATS[k].v}-bg)"><b>${CATS[k].n}</b>
       <span><span class="nx"><span>${nxt ? esc(nxt.title) : "Nothing open"}</span><span>${dn}/${all.length}</span></span>
       <span class="pbar"><i style="width:${all.length ? dn/all.length*100 : 0}%"></i></span></span></button>`;
   }).join("") + `<button class="tile add" id="newT" aria-label="Add a task">+</button>`;
-  const rec = sorted(open).slice(0,3);
+  const byDueAsc = (a, b) => ((a.due == null) - (b.due == null)) || (a.due - b.due) || (b.pr - a.pr);
+  const rec = open.slice().sort(byDueAsc);
+  $("#pcount").textContent = open.length + " open · by due date";
   $("#recent").innerHTML = rec.length ? rec.map(card).join("") : `<div class="empty">No open tasks. Type or say one above.</div>`;
 }
 function renderSchedule(){
@@ -371,7 +433,28 @@ function renderTasks(){
   const v = sorted(tasks.filter(t => filter==="done" ? t.done : filter==="all" ? !t.done : (!t.done && t.cat===filter)));
   $("#list").innerHTML = v.length ? v.map(card).join("") : `<div class="empty">${filter==="done"?"Nothing finished yet.":"No tasks here yet."}</div>`;
 }
-function render(){ renderHome(); renderSchedule(); renderTasks(); }
+function renderRewards(){
+  const b = bal();
+  $("#rbal").innerHTML = `<div class="sc1"><div><small>Your balance</small><b>${b} pts</b></div><div class="sc2"><span>🔥 ${streak()}</span><small>day streak</small></div></div><small class="sfoot">${game.pts} earned in total · Level ${level()}</small>`;
+  $("#rlist").innerHTML = game.rewards.slice().sort((a,b) => a.cost - b.cost).map(r => { const ok = b >= r.cost;
+    return `<li class="rw" data-rid="${r.id}"><div class="em">${esc(r.emoji || "🎁")}</div><div class="rb2"><b>${esc(r.name)}</b><small>${esc(r.note || "")}</small><small>${r.cost} pts${ok ? " · ready to claim" : " · " + (r.cost - b) + " to go"}</small><div class="rbar"><i style="width:${Math.min(100, b / r.cost * 100)}%"></i></div></div>
+      <button class="claim" data-r="claim" ${ok ? "" : "disabled"}>Claim</button><button class="x" data-r="del" aria-label="Remove reward">✕</button></li>`; }).join("");
+  const lg = game.log.slice().reverse().slice(0, 8);
+  $("#rlog").innerHTML = lg.length ? lg.map(l => `<div class="logrow"><span>${esc(l.emoji || "🎁")} ${esc(l.name)}</span><span>${new Date(l.at).toLocaleDateString([], {month:"short",day:"numeric"})} · −${l.cost}</span></div>`).join("")
+    : `<div class="empty">Nothing claimed yet. Finish tasks to earn your first treat.</div>`;
+}
+function claimReward(r){
+  if (bal() < r.cost || !confirm("Spend " + r.cost + " points on “" + r.name + "”?")) return;
+  game.spent += r.cost; game.log.push({name:r.name, emoji:r.emoji, cost:r.cost, at:Date.now()}); gsave(); render();
+  toast((r.emoji || "🎁") + " Enjoy: " + r.name + ". You earned it!", 6000);
+}
+function addReward(){
+  const name = prompt("What is the treat? For example: Ice cream with Niha"); if (!name || !name.trim()) return;
+  const cost = parseInt(prompt("How many points should it cost?", "100"), 10);
+  if (!cost || cost < 5) { toast("Please enter a number of points, like 100."); return; }
+  game.rewards.push({id:"r" + Date.now(), emoji:"🎁", name:name.trim(), note:"Your own treat", cost}); gsave(); render();
+}
+function render(){ renderHome(); renderSchedule(); renderTasks(); renderRewards(); }
 
 /* ---------- Task editor ---------- */
 const byId = id => tasks.find(x => x.id === id);
@@ -473,6 +556,10 @@ $("#chips").onclick = e => { const f = e.target.dataset.f; if (f) { filter = f; 
 $("#sort").onchange = e => { sortBy = e.target.value; save(); render(); };
 document.addEventListener("click", e => {
   const v = e.target.closest("[data-v]"); if (v) { showView(v.dataset.v); return; }
+  const rb = e.target.closest("[data-r]");
+  if (rb) { const r = game.rewards.find(x => x.id === rb.closest("[data-rid]").dataset.rid); if (!r) return;
+    if (rb.dataset.r === "claim") claimReward(r); else if (confirm("Remove this reward?")) { game.rewards = game.rewards.filter(x => x !== r); gsave(); render(); } return; }
+  if (e.target.closest("#addR")) { addReward(); return; }
   const d = e.target.closest(".day"); if (d) { selDay = +d.dataset.d; renderSchedule(); return; }
   const tile = e.target.closest(".tile");
   if (tile) { if (tile.id === "newT") { window.scrollTo(0,0); $("#in").focus(); } else { filter = tile.dataset.k; showView("tasks"); } return; }
@@ -488,15 +575,31 @@ document.addEventListener("click", e => {
 
 /* ---------- Voice ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const getLang = () => { try { return localStorage.getItem("taskmate-lang") || "en-IN"; } catch(e){ return "en-IN"; } };
+const vauto = () => { try { return localStorage.getItem("taskmate-vauto") === "1"; } catch(e){ return false; } };
+$("#vlang").value = getLang();
+$("#vlang").onchange = e => { try { localStorage.setItem("taskmate-lang", e.target.value); } catch(x){} };
+$("#vauto").checked = vauto();
+$("#vauto").onchange = e => { try { localStorage.setItem("taskmate-vauto", e.target.checked ? "1" : "0"); } catch(x){} };
 if (!SR) { $("#mic").style.display = "none"; }
 else {
-  const rec = new SR(); rec.lang = navigator.language || "en-US"; rec.interimResults = true;
-  let on = false;
-  rec.onresult = e => { const t = Array.from(e.results).map(r => r[0].transcript).join(" "); $("#in").value = t;
-    if (e.results[e.results.length-1].isFinal) { addTask(t); $("#in").value = ""; } };
-  rec.onend = () => { on = false; $("#mic").classList.remove("on"); };
-  rec.onerror = () => { $("#hint").textContent = "Voice input did not work. Check microphone permission and try again."; };
-  $("#mic").onclick = () => { if (on) rec.stop(); else { try { rec.start(); on = true; $("#mic").classList.add("on"); } catch(e){} } };
+  let rec = null, on = false, heard = "";
+  $("#mic").onclick = () => {
+    if (on && rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = getLang(); rec.interimResults = true; rec.continuous = false; rec.maxAlternatives = 1; heard = "";
+    rec.onstart = () => { on = true; $("#mic").classList.add("on"); $("#hint").textContent = "Listening… say your task, for example: call Niha tomorrow at 7 pm."; };
+    rec.onresult = e => { heard = Array.from(e.results).map(r => r[0].transcript).join(" ").trim(); $("#in").value = heard; };
+    rec.onerror = e => {
+      const m = {"not-allowed":"The microphone is blocked. In Chrome, tap the lock icon by the address, then Permissions, and allow the microphone.",
+        "service-not-allowed":"Voice typing is turned off on this phone. Check Google voice typing in your phone settings.",
+        "no-speech":"I did not hear anything. Tap the mic and speak right after it turns red.",
+        "network":"Voice needs an internet connection.", "audio-capture":"No microphone was found."};
+      $("#hint").textContent = m[e.error] || "Voice problem: " + e.error;
+    };
+    rec.onend = () => { on = false; $("#mic").classList.remove("on");
+      if (heard) { if (vauto()) { addTask(heard); $("#in").value = ""; } else { $("#in").focus(); $("#hint").textContent = "Heard: “" + heard + "”. Fix anything, then tap ↑ to add."; } } };
+    try { rec.start(); } catch(e){}
+  };
 }
 
 /* ---------- Reminders ---------- */
@@ -652,6 +755,18 @@ $("#gdis").onclick = () => {
 gStatus(gConnected() ? "Connected. Reminders sync automatically." : "Not connected yet.");
 loadGIS().catch(() => {});
 
+/* ---------- Light and dark mode ---------- */
+function applyTheme(t){
+  const r = document.documentElement;
+  if (t === "light" || t === "dark") r.setAttribute("data-theme", t); else { r.removeAttribute("data-theme"); t = "auto"; }
+  try { localStorage.setItem("taskmate-theme", t); } catch(e){}
+  const dark = t === "dark" || (t === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark ? "#131415" : "#F6F6F4";
+  document.querySelectorAll("#seg button").forEach(b => b.classList.toggle("on", b.dataset.th === t));
+}
+$("#seg").onclick = e => { const t = e.target.dataset.th; if (t) applyTheme(t); };
+applyTheme((() => { try { return localStorage.getItem("taskmate-theme") || "auto"; } catch(e){ return "auto"; } })());
+
 /* ---------- Backup ---------- */
 $("#exp").onclick = () => {
   const a = document.createElement("a");
@@ -660,7 +775,7 @@ $("#exp").onclick = () => {
 };
 $("#imp").onclick = () => $("#file").click();
 $("#file").onchange = async e => {
-  try { const d = JSON.parse(await e.target.files[0].text()), arr = Array.isArray(d) ? d : d.tasks; if (Array.isArray(arr)) { tasks = arr; if (!Array.isArray(d) && d.game) { game = d.game; gsave(); } save(); render(); toast("Backup imported."); } }
+  try { const d = JSON.parse(await e.target.files[0].text()), arr = Array.isArray(d) ? d : d.tasks; if (Array.isArray(arr)) { tasks = arr; if (!Array.isArray(d) && d.game) { game = d.game; ensureGame(); gsave(); } save(); render(); toast("Backup imported."); } }
   catch(err){ toast("That file is not a valid backup."); }
 };
 
